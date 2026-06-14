@@ -346,6 +346,10 @@ def serve(path):
 
 # Setup database and create default admin
 def setup_db():
+    import os
+    if not os.path.exists(app.instance_path):
+        os.makedirs(app.instance_path, exist_ok=True)
+        
     with app.app_context():
         db.create_all()
         if not User.query.filter_by(username='admin').first():
