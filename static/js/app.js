@@ -107,12 +107,7 @@ async function authFetch(url) {
 }
 
 async function loadDashboardData() {
-    // Load System Health
-    try {
-        const health = await authFetch('/api/health');
-        document.getElementById('cpu-stat').textContent = health.cpu + '%';
-        document.getElementById('ram-stat').textContent = health.memory + '%';
-    } catch(err) {}
+
 
     // Load Summary
     const summary = await authFetch('/api/stats/summary');
