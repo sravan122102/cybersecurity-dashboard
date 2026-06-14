@@ -1,0 +1,27 @@
+rules:
+  - id: 1
+    name: "Brute Force Attack"
+    description: "Multiple failed login attempts from same IP"
+    event_type: "AUTH_FAILURE"
+    threshold: 5
+    time_window_seconds: 300
+    severity: "HIGH"
+    confidence: 0.9
+
+  - id: 2
+    name: "SQL Injection Attempt"
+    description: "HTTP requests containing SQL injection payloads"
+    event_type: "SQL_INJECTION_ATTEMPT"
+    threshold: 1
+    time_window_seconds: 60
+    severity: "CRITICAL"
+    confidence: 0.95
+
+  - id: 3
+    name: "Port Scan"
+    description: "Rapid sequential connection attempts"
+    event_type: "PORT_SCAN"
+    threshold: 5
+    time_window_seconds: 60
+    severity: "MEDIUM"
+    confidence: 0.8
