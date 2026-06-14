@@ -65,7 +65,9 @@ def run_detection():
                             
                             # Send to Alerting module
                             try:
-                                requests.post("http://localhost:5000/api/internal/alerts", json={
+                                import os
+                                port = os.environ.get('PORT', 5000)
+                                requests.post(f"http://127.0.0.1:{port}/api/internal/alerts", json={
                                     "threat_id": new_threat.id,
                                     "threat_type": new_threat.threat_type,
                                     "severity": new_threat.severity,

@@ -49,7 +49,8 @@ def run_generator():
     while True:
         try:
             log_data = generate_log()
-            requests.post(API_URL, json=log_data)
+            port = os.environ.get('PORT', 5000)
+            requests.post(f'http://127.0.0.1:{port}/api/logs', json=log_data)
             print(f"Sent log: {log_data['event_type']} from {log_data['source_ip']}")
         except Exception as e:
             print(f"Error sending log: {e}")

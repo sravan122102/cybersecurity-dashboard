@@ -45,7 +45,14 @@ loginBtn.addEventListener('click', async () => {
             loginError.textContent = data.message;
         }
     } catch (e) {
+        console.error("Login Error:", e);
         loginError.textContent = 'Server error. Try again.';
+    }
+});
+
+passwordInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        loginBtn.click();
     }
 });
 
