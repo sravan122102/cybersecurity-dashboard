@@ -70,37 +70,41 @@ def register(current_user):
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
-    data = request.get_json()
-    if not data or not data.get('username') or not data.get('password'):
-        return jsonify({'message': 'Missing credentials'}), 400
+    try:
+        data = request.get_json()
+        if not data or not data.get('username') or not data.get('password'):
+            return jsonify({'message': 'Missing credentials'}), 400
+            
+        user = User.query.filter_by(username=data['username']).first()
         
-    user = User.query.filter_by(username=data['username']).first()
-    
-    if not user:
-        return jsonify({'message': 'Invalid credentials'}), 401
+        if not user:
+            return jsonify({'message': 'Invalid credentials'}), 401
 
-    if user.locked_until and user.locked_until > datetime.datetime.utcnow():
-        return jsonify({'message': 'Account is temporarily locked'}), 403
-        
-    if user.check_password(data['password']):
-        # Reset failed attempts
-        user.failed_login_attempts = 0
-        user.locked_until = None
-        db.session.commit()
-        
-        token = jwt.encode({
-            'user_id': user.id,
-            'role': user.role,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-        }, app.config['SECRET_KEY'], algorithm="HS256")
-        
-        return jsonify({'token': token, 'role': user.role}), 200
-    else:
-        user.failed_login_attempts += 1
-        if user.failed_login_attempts >= 5:
-            user.locked_until = datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
-        db.session.commit()
-        return jsonify({'message': 'Invalid credentials'}), 401
+        if user.locked_until and user.locked_until > datetime.datetime.utcnow():
+            return jsonify({'message': 'Account is temporarily locked'}), 403
+            
+        if user.check_password(data['password']):
+            # Reset failed attempts
+            user.failed_login_attempts = 0
+            user.locked_until = None
+            db.session.commit()
+            
+            token = jwt.encode({
+                'user_id': user.id,
+                'role': user.role,
+                'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+            }, app.config['SECRET_KEY'], algorithm="HS256")
+            
+            return jsonify({'token': token, 'role': user.role}), 200
+        else:
+            user.failed_login_attempts += 1
+            if user.failed_login_attempts >= 5:
+                user.locked_until = datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
+            db.session.commit()
+            return jsonify({'message': 'Invalid credentials'}), 401
+    except Exception as e:
+        import traceback
+        return jsonify({'message': f"SERVER CRASH: {str(e)} | {traceback.format_exc()}"}), 500
 
 @app.route('/api/auth/me', methods=['GET'])
 @token_required
