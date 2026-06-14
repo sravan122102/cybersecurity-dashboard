@@ -8,5 +8,5 @@ python log_generator.py &
 # Start the background threat detection engine daemon
 python detection_engine.py &
 
-# Start the main Flask web server with Gunicorn and Eventlet for WebSockets
-gunicorn -k eventlet -w 1 app:app
+# Start the main Flask web server with native threads to avoid Eventlet/SQLite locks
+gunicorn --threads 50 -w 1 app:app
