@@ -26,9 +26,6 @@
             <div class="logo">CyberSec</div>
             <ul id="sidebar-nav">
                 <li class="active" data-view="dashboard-content">Dashboard</li>
-                <li data-view="threats-content">Threats</li>
-                <li data-view="logs-content">Logs</li>
-                <li data-view="settings-content">Settings</li>
             </ul>
             <div class="user-info">
                 <span id="user-role"></span>
@@ -80,62 +77,7 @@
                 </section>
             </div>
             
-            <div id="threats-content" class="page-content">
-                <div class="card">
-                    <h3>Historical Threats</h3>
-                    <div style="margin-bottom: 15px;">
-                        <select id="threat-filter-severity" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-dark); color: white;">
-                            <option value="">All Severities</option>
-                            <option value="CRITICAL">Critical</option>
-                            <option value="HIGH">High</option>
-                            <option value="MEDIUM">Medium</option>
-                            <option value="LOW">Low</option>
-                        </select>
-                        <button onclick="loadThreats()" style="width: auto; padding: 8px 15px; margin-left: 10px;">Filter</button>
-                    </div>
-                    <table>
-                        <thead><tr><th>Time</th><th>Threat Type</th><th>Source IP</th><th>Severity</th><th>Confidence</th><th>Mitigation</th></tr></thead>
-                        <tbody id="threats-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <div id="logs-content" class="page-content">
-                <div class="card">
-                    <h3>Log Explorer</h3>
-                    <div style="margin-bottom: 15px;">
-                        <input type="text" id="log-filter-ip" placeholder="Source IP" style="width: 200px; padding: 8px; margin-bottom: 0;" />
-                        <select id="log-filter-severity" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-dark); color: white; margin-left: 10px;">
-                            <option value="">All Severities</option>
-                            <option value="CRITICAL">Critical</option>
-                            <option value="ERROR">Error</option>
-                            <option value="WARNING">Warning</option>
-                            <option value="INFO">Info</option>
-                        </select>
-                        <button onclick="loadLogs()" style="width: auto; padding: 8px 15px; margin-left: 10px;">Search</button>
-                    </div>
-                    <table>
-                        <thead><tr><th>Time</th><th>Source IP</th><th>Location</th><th>Event</th><th>Severity</th><th>Message</th></tr></thead>
-                        <tbody id="logs-tbody"></tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <div id="settings-content" class="page-content">
-                <div class="main-grid">
-                    <div class="card">
-                        <h3>Active Detection Rules</h3>
-                        <pre id="rules-content" style="background: var(--bg-dark); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; color: #a78bfa; margin-top: 15px; white-space: pre-wrap; word-wrap: break-word;"></pre>
-                    </div>
-                    <div class="card">
-                        <h3>User Management</h3>
-                        <table style="margin-top: 15px;">
-                            <thead><tr><th>User</th><th>Role</th><th>Status</th></tr></thead>
-                            <tbody id="users-tbody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+
         </main>
         
         <div id="alert-toast-container"></div>
