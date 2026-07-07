@@ -54,45 +54,29 @@
             </header>
             
             <div id="dashboard-content" class="page-content active">
-                <section class="summary-cards">
-                    <div class="card">
-                        <h3>Total Logs (24h)</h3>
-                        <div class="value" id="val-logs">0</div>
-                    </div>
-                    <div class="card">
-                        <h3>Threats Detected (24h)</h3>
-                        <div class="value" id="val-threats">0</div>
-                    </div>
-                    <div class="card">
-                        <h3>Active Alerts</h3>
-                        <div class="value" id="val-alerts">0</div>
-                    </div>
-                    <div class="card" id="status-card">
-                        <h3>System Status</h3>
-                        <div class="value status-badge" id="val-status">Secure</div>
-                    </div>
-                </section>
-                
-                <div class="main-grid">
-                    <section class="chart-section card">
-                        <h3>Threat Timeline (7 Days)</h3>
-                        <canvas id="timelineChart"></canvas>
-                    </section>
-                    
-                    <section class="top-sources card">
-                        <h3>Top Threat Sources</h3>
-                        <table id="sources-table">
-                            <thead>
-                                <tr><th>Source IP</th><th>Event Count</th></tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </section>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h3 style="font-size: 1.5rem; color: var(--text-primary);">Infrastructure Monitoring</h3>
+                    <button id="simulate-attack-btn" style="width: auto; padding: 12px 25px; background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);">Simulate Attack</button>
                 </div>
-                
-                <section class="live-feed card">
-                    <h3>Live Activity Feed</h3>
-                    <div class="feed-container" id="activity-feed"></div>
+                <section class="company-cards" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 35px; min-height: 250px;">
+                    <div class="card company-card" id="company-Alpha" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                        <h3 style="font-size: 1.8rem; margin-bottom: 20px; color: white;">Company Alpha</h3>
+                        <div class="status-indicator">
+                            <span class="value status-badge status-Secure" id="status-Alpha">Secure</span>
+                        </div>
+                    </div>
+                    <div class="card company-card" id="company-Beta" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                        <h3 style="font-size: 1.8rem; margin-bottom: 20px; color: white;">Company Beta</h3>
+                        <div class="status-indicator">
+                            <span class="value status-badge status-Secure" id="status-Beta">Secure</span>
+                        </div>
+                    </div>
+                    <div class="card company-card" id="company-Gamma" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                        <h3 style="font-size: 1.8rem; margin-bottom: 20px; color: white;">Company Gamma</h3>
+                        <div class="status-indicator">
+                            <span class="value status-badge status-Secure" id="status-Gamma">Secure</span>
+                        </div>
+                    </div>
                 </section>
             </div>
             

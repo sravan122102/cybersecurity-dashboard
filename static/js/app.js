@@ -107,97 +107,26 @@ async function authFetch(url) {
 }
 
 async function loadDashboardData() {
-
-
-    // Load Summary
-    const summary = await authFetch('/api/stats/summary');
-    document.getElementById('val-logs').textContent = summary.total_logs_24h;
-    document.getElementById('val-threats').textContent = summary.total_threats_24h;
-    document.getElementById('val-alerts').textContent = summary.active_alerts;
-    document.getElementById('notif-badge').textContent = summary.active_alerts;
-    if (summary.active_alerts > 0) {
-        document.getElementById('notif-badge').style.display = 'inline-block';
-    } else {
-        document.getElementById('notif-badge').style.display = 'none';
-    }
-    
-    const statusEl = document.getElementById('val-status');
-    statusEl.textContent = summary.system_status;
-    statusEl.className = `value status-badge status-${summary.system_status}`;
-    
-    // Load Top Sources
-    const sources = await authFetch('/api/stats/top_sources');
-    const tbody = document.querySelector('#sources-table tbody');
-    tbody.innerHTML = '';
-    sources.forEach(s => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${s.source_ip}</td><td>${s.count}</td>`;
-        tbody.appendChild(tr);
-    });
-    
-    // Load Recent Activity
-    const activity = await authFetch('/api/stats/recent_activity');
-    const feed = document.getElementById('activity-feed');
-    feed.innerHTML = '';
-    activity.forEach(a => addFeedItem(a, false));
-    
-    // Load Timeline Chart
-    const timeline = await authFetch('/api/stats/timeline');
-    renderChart(timeline);
-}
-
-function addFeedItem(log, prepend=true) {
-    const feed = document.getElementById('activity-feed');
-    const item = document.createElement('div');
-    item.className = 'feed-item';
-    const time = new Date(log.timestamp).toLocaleTimeString();
-    item.innerHTML = `
-        <span class="time">${time}</span>
-        <span class="ip">${log.source_ip}</span>
-        <span class="event severity-${log.severity}">${log.event_type}</span>
-    `;
-    if (prepend) {
-        feed.prepend(item);
-        if(feed.children.length > 50) feed.lastChild.remove();
-    } else {
-        feed.appendChild(item);
-    }
-}
-
-let chartInstance = null;
-function renderChart(data) {
-    const ctx = document.getElementById('timelineChart').getContext('2d');
-    
-    const labels = Object.keys(data).sort();
-    const criticalData = labels.map(l => data[l].CRITICAL);
-    const highData = labels.map(l => data[l].HIGH);
-    const mediumData = labels.map(l => data[l].MEDIUM);
-    
-    if(chartInstance) chartInstance.destroy();
-    
-    chartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                { label: 'Critical', data: criticalData, borderColor: '#ef4444', tension: 0.4 },
-                { label: 'High', data: highData, borderColor: '#f59e0b', tension: 0.4 },
-                { label: 'Medium', data: mediumData, borderColor: '#3b82f6', tension: 0.4 }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { labels: { color: '#94a3b8' } }
-            },
-            scales: {
-                x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } },
-                y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
-            }
+    // Reset all statuses to Secure on load
+    ['Alpha', 'Beta', 'Gamma'].forEach(company => {
+        const el = document.getElementById(`status-${company}`);
+        if(el) {
+            el.textContent = 'Secure';
+            el.className = 'value status-badge status-Secure';
         }
     });
 }
+
+document.getElementById('simulate-attack-btn').addEventListener('click', async () => {
+    try {
+        await fetch('/api/simulate-attack', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+    } catch(err) {
+        console.error(err);
+    }
+});
 
 // WebSocket connection
 function initWebSocket() {
@@ -208,9 +137,23 @@ function initWebSocket() {
     });
     
     state.socket.on('new_alert', (alert) => {
-        showToast(`🚨 NEW ALERT: ${alert.threat_type} from ${alert.source_ip}`);
-        // Refresh summary
-        loadDashboardData();
+        showToast(`🚨 CRITICAL: ${alert.company} is under attack! (${alert.threat_type})`);
+        
+        // Reset all to secure first, then highlight the attacked one
+        ['Alpha', 'Beta', 'Gamma'].forEach(company => {
+            const el = document.getElementById(`status-${company}`);
+            if(el) {
+                el.textContent = 'Secure';
+                el.className = 'value status-badge status-Secure';
+            }
+        });
+        
+        // Highlight the attacked company
+        const el = document.getElementById(`status-${alert.company}`);
+        if(el) {
+            el.textContent = 'Under Attack';
+            el.className = 'value status-badge status-Critical';
+        }
     });
 }
 
@@ -218,9 +161,14 @@ function showToast(msg) {
     const container = document.getElementById('alert-toast-container');
     const toast = document.createElement('div');
     toast.className = 'toast';
+    toast.style.backgroundColor = '#ef4444';
+    toast.style.color = 'white';
+    toast.style.padding = '20px';
+    toast.style.fontSize = '1.2rem';
+    toast.style.fontWeight = 'bold';
     toast.textContent = msg;
     container.appendChild(toast);
-    setTimeout(() => toast.remove(), 5000);
+    setTimeout(() => toast.remove(), 8000);
 }
 
 // Sidebar Navigation

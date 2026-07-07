@@ -138,6 +138,23 @@ def ingest_log():
     except Exception as e:
         return jsonify({'message': 'Error ingesting log', 'error': str(e)}), 500
 
+@app.route('/api/simulate-attack', methods=['POST'])
+@token_required
+def simulate_attack(current_user):
+    import random
+    companies = ['Alpha', 'Beta', 'Gamma']
+    attacked_company = random.choice(companies)
+    
+    threat_types = ['Massive DDoS Attack', 'Ransomware Encryption', 'Zero-Day Exploit', 'Database Exfiltration']
+    threat = random.choice(threat_types)
+    
+    socketio.emit('new_alert', {
+        'company': attacked_company,
+        'threat_type': threat
+    })
+    
+    return jsonify({'message': 'Attack simulated', 'company': attacked_company}), 200
+
 @app.route('/api/internal/alerts', methods=['POST'])
 def create_alert():
     data = request.get_json()
@@ -335,8 +352,10 @@ def get_rules(current_user):
 @app.route('/api/health', methods=['GET'])
 @token_required
 def get_health(current_user):
+    # interval=0.1 ensures it measures usage over a fraction of a second, 
+    # instead of returning 0.0 because it lacks a previous baseline
     return jsonify({
-        'cpu': psutil.cpu_percent(),
+        'cpu': psutil.cpu_percent(interval=0.1),
         'memory': psutil.virtual_memory().percent
     }), 200
 
