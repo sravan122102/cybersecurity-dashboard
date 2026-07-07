@@ -2,6 +2,7 @@ import time
 import requests
 import random
 import datetime
+import os
 
 API_URL = "http://localhost:5000/api/logs"
 
