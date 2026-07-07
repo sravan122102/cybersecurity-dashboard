@@ -222,6 +222,93 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// Phase 2 functionality
+async function loadThreats() {
+    const severity = document.getElementById('threat-filter-severity').value;
+    let url = '/api/threats';
+    if (severity) url += `?severity=${severity}`;
+    
+    try {
+        const threats = await authFetch(url);
+        const tbody = document.getElementById('threats-tbody');
+        tbody.innerHTML = '';
+        threats.forEach(t => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${new Date(t.timestamp).toLocaleString()}</td>
+                <td><strong>${t.threat_type}</strong></td>
+                <td>${t.source_ip}</td>
+                <td class="severity-${t.severity}">${t.severity}</td>
+                <td>${(t.confidence * 100).toFixed(0)}%</td>
+                <td>${t.mitigation_step || '-'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch(err) { console.error(err); }
+}
 
+async function loadLogs() {
+    const ip = document.getElementById('log-filter-ip').value;
+    const severity = document.getElementById('log-filter-severity').value;
+    let url = '/api/logs/search?';
+    if (ip) url += `source_ip=${encodeURIComponent(ip)}&`;
+    if (severity) url += `severity=${severity}`;
+    
+    try {
+        const logs = await authFetch(url);
+        const tbody = document.getElementById('logs-tbody');
+        tbody.innerHTML = '';
+        logs.forEach(l => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${new Date(l.timestamp).toLocaleString()}</td>
+                <td>${l.source_ip}</td>
+                <td>${l.location || 'Unknown'}</td>
+                <td>${l.event_type}</td>
+                <td class="severity-${l.severity}">${l.severity}</td>
+                <td style="word-break: break-all; max-width: 300px;">${l.raw_message}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch(err) { console.error(err); }
+}
+
+async function loadSettings() {
+    try {
+        const res = await fetch('/api/rules', { headers: { 'Authorization': `Bearer ${state.token}` } });
+        if(res.ok) {
+            const rules = await res.json();
+            document.getElementById('rules-content').textContent = JSON.stringify(rules, null, 2);
+        }
+    } catch(err) { console.error(err); }
+    
+    try {
+        const res = await fetch('/api/users', { headers: { 'Authorization': `Bearer ${state.token}` } });
+        if(res.ok) {
+            const users = await res.json();
+            const tbody = document.getElementById('users-tbody');
+            tbody.innerHTML = '';
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                const locked = u.locked_until ? `Locked until ${new Date(u.locked_until).toLocaleTimeString()}` : 'Active';
+                tr.innerHTML = `
+                    <td>${u.username}</td>
+                    <td>${u.role}</td>
+                    <td>${locked}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    } catch(err) { console.error(err); }
+}
+
+sidebarLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+        const viewId = e.target.getAttribute('data-view');
+        if (viewId === 'threats-content') loadThreats();
+        else if (viewId === 'logs-content') loadLogs();
+        else if (viewId === 'settings-content') loadSettings();
+    });
+});
 
 init();
