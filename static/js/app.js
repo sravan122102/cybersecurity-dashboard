@@ -137,22 +137,28 @@ function initWebSocket() {
     });
     
     state.socket.on('new_alert', (alert) => {
-        showToast(`🚨 CRITICAL: ${alert.company} is under attack! (${alert.threat_type})`);
-        
-        // Reset all to secure first, then highlight the attacked one
-        ['Alpha', 'Beta', 'Gamma'].forEach(company => {
-            const el = document.getElementById(`status-${company}`);
+        if (alert.company) {
+            // Simulated Attack on a Company
+            showToast(`🚨 CRITICAL: ${alert.company} is under attack! (${alert.threat_type})`);
+            
+            // Reset all to secure first, then highlight the attacked one
+            ['Alpha', 'Beta', 'Gamma'].forEach(company => {
+                const el = document.getElementById(`status-${company}`);
+                if(el) {
+                    el.textContent = 'Secure';
+                    el.className = 'value status-badge status-Secure';
+                }
+            });
+            
+            // Highlight the attacked company
+            const el = document.getElementById(`status-${alert.company}`);
             if(el) {
-                el.textContent = 'Secure';
-                el.className = 'value status-badge status-Secure';
+                el.textContent = 'Under Attack';
+                el.className = 'value status-badge status-Critical';
             }
-        });
-        
-        // Highlight the attacked company
-        const el = document.getElementById(`status-${alert.company}`);
-        if(el) {
-            el.textContent = 'Under Attack';
-            el.className = 'value status-badge status-Critical';
+        } else {
+            // Generic background detection alert
+            showToast(`⚠️ DETECTED: ${alert.threat_type} from ${alert.source_ip}`);
         }
     });
 }
