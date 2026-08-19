@@ -124,16 +124,6 @@ async function loadDashboardData() {
     });
 }
 
-document.getElementById('simulate-attack-btn').addEventListener('click', async () => {
-    try {
-        await fetch('/api/simulate-attack', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${state.token}` }
-        });
-    } catch(err) {
-        console.error(err);
-    }
-});
 
 // Auto-Simulate Attack every 2 to 3 minutes
 function scheduleNextAttack() {
