@@ -301,7 +301,21 @@ async function loadSettings() {
         const res = await fetch('/api/rules', { headers: { 'Authorization': `Bearer ${state.token}` } });
         if(res.ok) {
             const rules = await res.json();
-            document.getElementById('rules-content').textContent = JSON.stringify(rules, null, 2);
+            const tbody = document.getElementById('rules-tbody');
+            tbody.innerHTML = '';
+            rules.forEach(r => {
+                const tr = document.createElement('tr');
+                const timeWindow = r.time_window_seconds >= 60 ? `${r.time_window_seconds / 60} min` : `${r.time_window_seconds}s`;
+                tr.innerHTML = `
+                    <td><strong>${r.name}</strong><br><small style="color: var(--text-secondary);">${r.description}</small></td>
+                    <td><code style="background: var(--bg-dark); padding: 3px 8px; border-radius: 4px; font-size: 0.8rem;">${r.event_type}</code></td>
+                    <td class="severity-${r.severity}">${r.severity}</td>
+                    <td>${r.threshold} events</td>
+                    <td>${timeWindow}</td>
+                    <td>${(r.confidence * 100).toFixed(0)}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
     } catch(err) { console.error(err); }
     

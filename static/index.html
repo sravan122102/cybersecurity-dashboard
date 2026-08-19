@@ -124,7 +124,10 @@
                 <div class="main-grid">
                     <div class="card">
                         <h3>Active Detection Rules</h3>
-                        <pre id="rules-content" style="background: var(--bg-dark); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; color: #a78bfa; margin-top: 15px; white-space: pre-wrap; word-wrap: break-word;"></pre>
+                        <table style="margin-top: 15px;">
+                            <thead><tr><th>Rule Name</th><th>Event Type</th><th>Severity</th><th>Threshold</th><th>Time Window</th><th>Confidence</th></tr></thead>
+                            <tbody id="rules-tbody"></tbody>
+                        </table>
                     </div>
                     <div class="card">
                         <h3>User Management</h3>
