@@ -334,4 +334,15 @@ sidebarLinks.forEach(link => {
     });
 });
 
+// Auto-refresh active tabs every 5 seconds to show live background data
+setInterval(() => {
+    if (state.token) {
+        if (document.getElementById('threats-content').classList.contains('active')) {
+            loadThreats();
+        } else if (document.getElementById('logs-content').classList.contains('active')) {
+            loadLogs();
+        }
+    }
+}, 5000);
+
 init();
