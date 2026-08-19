@@ -369,7 +369,6 @@ def serve(path):
 
 # Setup database and create default admin
 def setup_db():
-    import os
     if not os.path.exists(app.instance_path):
         os.makedirs(app.instance_path, exist_ok=True)
         
@@ -382,6 +381,193 @@ def setup_db():
             db.session.commit()
             print("Default admin created: admin / admin123")
 
-if __name__ == '__main__':
+# ============================================================
+# BACKGROUND THREADS (run inside the same process as the app)
+# ============================================================
+import threading
+import random
+import time as _time
+
+def _bg_log_generator():
+    """Generates fake network logs every 1-5 seconds."""
+    import datetime as dt
+    _time.sleep(5)  # Wait for app to fully start
+    print("[BG] Log Generator started.")
+    
+    modules_config = {
+        'Web Server': {
+            'events': [
+                ('HTTP_REQUEST', 'INFO', 'GET /index.html HTTP/1.1 200 OK'),
+                ('HTTP_REQUEST', 'INFO', 'POST /login HTTP/1.1 200 OK'),
+                ('SQL_INJECTION_ATTEMPT', 'CRITICAL', 'GET /search?q=1 OR 1=1 HTTP/1.1 403 Forbidden')
+            ],
+            'dest_ip': '192.168.1.100'
+        },
+        'Firewall': {
+            'events_fn': lambda src: [
+                ('PORT_SCAN', 'WARNING', f'Multiple connection attempts from {src}'),
+                ('CONNECTION_ALLOWED', 'INFO', f'Connection from {src} to port 443 allowed')
+            ],
+            'dest_ip': '192.168.1.254'
+        },
+        'System': {
+            'events_fn': lambda src: [
+                ('AUTH_FAILURE', 'WARNING', f'Failed login attempt for user root from {src}'),
+                ('AUTH_SUCCESS', 'INFO', f'Successful login for user admin from {src}')
+            ],
+            'dest_ip': '127.0.0.1'
+        }
+    }
+    ip_list = ['192.168.1.10', '192.168.1.15', '10.0.0.5', '172.16.0.2', '8.8.8.8', '114.114.114.114']
+    local_ips = {'192.168.1.10', '192.168.1.15', '10.0.0.5', '172.16.0.2'}
+    locations = ['United States', 'China', 'Russia', 'Brazil', 'Germany', 'India', 'Japan', 'South Korea', 'United Kingdom']
+
+    while True:
+        try:
+            with app.app_context():
+                module = random.choice(list(modules_config.keys()))
+                cfg = modules_config[module]
+                source_ip = random.choice(ip_list)
+                
+                if 'events' in cfg:
+                    event = random.choice(cfg['events'])
+                else:
+                    event = random.choice(cfg['events_fn'](source_ip))
+                
+                location = 'Local Network' if source_ip in local_ips else random.choice(locations)
+                
+                new_log = Log(
+                    timestamp=dt.datetime.utcnow().isoformat(),
+                    source_ip=source_ip,
+                    destination_ip=cfg['dest_ip'],
+                    event_type=event[0],
+                    severity=event[1],
+                    raw_message=event[2],
+                    source_module=module,
+                    location=location
+                )
+                db.session.add(new_log)
+                db.session.commit()
+                print(f"[BG-LOG] {event[0]} from {source_ip}")
+        except Exception as e:
+            print(f"[BG-LOG ERROR] {e}")
+            try:
+                db.session.rollback()
+            except:
+                pass
+        _time.sleep(random.uniform(1.0, 5.0))
+
+
+def _bg_detection_engine():
+    """Scans logs for threat patterns every 10 seconds."""
+    import datetime as dt
+    _time.sleep(10)  # Wait for some logs to accumulate
+    print("[BG] Detection Engine started.")
+    
+    try:
+        with open('rules.yaml', 'r') as f:
+            rules = yaml.safe_load(f)['rules']
+    except Exception as e:
+        print(f"[BG-DETECT] Failed to load rules: {e}")
+        return
+
+    while True:
+        try:
+            with app.app_context():
+                now = dt.datetime.utcnow()
+                for rule in rules:
+                    time_window = dt.timedelta(seconds=rule['time_window_seconds'])
+                    start_time = (now - time_window).isoformat()
+                    
+                    results = db.session.query(
+                        Log.source_ip, func.count(Log.id).label('count')
+                    ).filter(
+                        Log.event_type == rule['event_type'],
+                        Log.timestamp >= start_time
+                    ).group_by(Log.source_ip).all()
+                    
+                    for source_ip, count in results:
+                        if count >= rule['threshold']:
+                            existing = Threat.query.filter(
+                                Threat.threat_type == rule['name'],
+                                Threat.source_ip == source_ip,
+                                Threat.timestamp >= start_time
+                            ).first()
+                            
+                            if not existing:
+                                mitigation = "Investigate immediately."
+                                if rule['name'] == 'Brute Force Attack':
+                                    mitigation = f"Temporarily block IP {source_ip} at the firewall and require password reset."
+                                elif rule['name'] == 'SQL Injection Attempt':
+                                    mitigation = f"Block IP {source_ip} at WAF. Audit web application inputs."
+                                elif rule['name'] == 'Port Scan':
+                                    mitigation = f"Drop connections from {source_ip} at edge router."
+                                
+                                new_threat = Threat(
+                                    timestamp=now.isoformat(),
+                                    threat_type=rule['name'],
+                                    severity=rule['severity'],
+                                    source_ip=source_ip,
+                                    confidence=rule['confidence'],
+                                    description=f"{rule['description']} ({count} occurrences)",
+                                    mitigation_step=mitigation
+                                )
+                                db.session.add(new_threat)
+                                db.session.commit()
+                                print(f"[BG-THREAT] DETECTED: {rule['name']} from {source_ip}")
+                                
+                                # Send WebSocket alert
+                                try:
+                                    new_alert = Alert(
+                                        threat_id=new_threat.id,
+                                        timestamp=now.isoformat(),
+                                        threat_type=new_threat.threat_type,
+                                        source_ip=new_threat.source_ip,
+                                        severity=new_threat.severity,
+                                        description=new_threat.description
+                                    )
+                                    db.session.add(new_alert)
+                                    db.session.commit()
+                                    
+                                    socketio.emit('new_alert', {
+                                        'threat_type': new_threat.threat_type,
+                                        'severity': new_threat.severity,
+                                        'source_ip': new_threat.source_ip,
+                                        'timestamp': new_threat.timestamp,
+                                        'description': new_threat.description
+                                    })
+                                except Exception as e:
+                                    print(f"[BG-ALERT ERROR] {e}")
+        except Exception as e:
+            print(f"[BG-DETECT ERROR] {e}")
+            try:
+                db.session.rollback()
+            except:
+                pass
+        _time.sleep(10)
+
+
+# Start background threads when the app boots
+_bg_started = False
+
+def start_background_tasks():
+    global _bg_started
+    if _bg_started:
+        return
+    _bg_started = True
+    
     setup_db()
+    
+    t1 = threading.Thread(target=_bg_log_generator, daemon=True)
+    t1.start()
+    
+    t2 = threading.Thread(target=_bg_detection_engine, daemon=True)
+    t2.start()
+    
+    print("[APP] Background tasks launched.")
+
+# This runs when gunicorn imports the app module
+start_background_tasks()
+
+if __name__ == '__main__':
     socketio.run(app, debug=True, port=5000)
