@@ -45,17 +45,33 @@ def generate_log():
     }
     return log_data
 
+from app import app
+from database import db
+from models import Log
+
 def run_generator():
     print("Starting simulated log generator...")
-    while True:
-        try:
-            log_data = generate_log()
-            port = os.environ.get('PORT', 5000)
-            requests.post(f'http://127.0.0.1:{port}/api/logs', json=log_data)
-            print(f"Sent log: {log_data['event_type']} from {log_data['source_ip']}")
-        except Exception as e:
-            print(f"Error sending log: {e}")
-        time.sleep(random.uniform(1.0, 5.0))
+    with app.app_context():
+        while True:
+            try:
+                log_data = generate_log()
+                new_log = Log(
+                    timestamp=log_data['timestamp'],
+                    source_ip=log_data['source_ip'],
+                    destination_ip=log_data['destination_ip'],
+                    event_type=log_data['event_type'],
+                    severity=log_data['severity'],
+                    raw_message=log_data['raw_message'],
+                    source_module=log_data['source_module'],
+                    location=log_data['location']
+                )
+                db.session.add(new_log)
+                db.session.commit()
+                print(f"Inserted log: {log_data['event_type']} from {log_data['source_ip']}")
+            except Exception as e:
+                print(f"Error inserting log: {e}")
+                db.session.rollback()
+            time.sleep(random.uniform(1.0, 5.0))
 
 if __name__ == '__main__':
     run_generator()
