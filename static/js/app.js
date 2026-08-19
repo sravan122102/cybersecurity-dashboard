@@ -87,6 +87,8 @@ function showLogin() {
     dashboardView.classList.remove('active');
 }
 
+let isAutoAttackScheduled = false;
+
 function showDashboard() {
     loginView.classList.remove('active');
     dashboardView.classList.add('active');
@@ -94,6 +96,11 @@ function showDashboard() {
     
     loadDashboardData();
     initWebSocket();
+    
+    if (!isAutoAttackScheduled) {
+        scheduleNextAttack();
+        isAutoAttackScheduled = true;
+    }
     setInterval(loadDashboardData, 30000); // refresh every 30s
 }
 
@@ -127,6 +134,26 @@ document.getElementById('simulate-attack-btn').addEventListener('click', async (
         console.error(err);
     }
 });
+
+// Auto-Simulate Attack every 2 to 3 minutes
+function scheduleNextAttack() {
+    // Random delay between 2 mins (120,000 ms) and 3 mins (180,000 ms)
+    const delay = Math.floor(Math.random() * (180000 - 120000 + 1)) + 120000;
+    
+    setTimeout(async () => {
+        if (state.token) {
+            try {
+                await fetch('/api/simulate-attack', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${state.token}` }
+                });
+            } catch(err) {
+                console.error(err);
+            }
+        }
+        scheduleNextAttack(); // Schedule the next one
+    }, delay);
+}
 
 // WebSocket connection
 function initWebSocket() {
