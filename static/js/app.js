@@ -187,7 +187,74 @@ function initWebSocket() {
     }
 }
 
-function showToast(msg) {
+// Audio alert system using Web Audio API + Speech Synthesis
+function playAlarmBeep() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // First beep
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.frequency.value = 880;
+        osc1.type = 'square';
+        gain1.gain.value = 0.3;
+        osc1.start(audioCtx.currentTime);
+        osc1.stop(audioCtx.currentTime + 0.15);
+        
+        // Second beep (higher pitch)
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.frequency.value = 1200;
+        osc2.type = 'square';
+        gain2.gain.value = 0.3;
+        osc2.start(audioCtx.currentTime + 0.2);
+        osc2.stop(audioCtx.currentTime + 0.35);
+        
+        // Third beep (even higher)
+        const osc3 = audioCtx.createOscillator();
+        const gain3 = audioCtx.createGain();
+        osc3.connect(gain3);
+        gain3.connect(audioCtx.destination);
+        osc3.frequency.value = 1500;
+        osc3.type = 'square';
+        gain3.gain.value = 0.3;
+        osc3.start(audioCtx.currentTime + 0.4);
+        osc3.stop(audioCtx.currentTime + 0.55);
+    } catch(e) {
+        console.log('Audio not supported');
+    }
+}
+
+function speakAlert(message) {
+    try {
+        if ('speechSynthesis' in window) {
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(message);
+            utterance.rate = 0.95;
+            utterance.pitch = 0.8;
+            utterance.volume = 1.0;
+            
+            // Try to use a deeper/robotic voice if available
+            const voices = window.speechSynthesis.getVoices();
+            const preferredVoice = voices.find(v => v.name.includes('Google UK English Male')) 
+                || voices.find(v => v.name.includes('Male'))
+                || voices.find(v => v.lang === 'en-US' || v.lang === 'en-GB');
+            if (preferredVoice) utterance.voice = preferredVoice;
+            
+            window.speechSynthesis.speak(utterance);
+        }
+    } catch(e) {
+        console.log('Speech synthesis not supported');
+    }
+}
+
+function showToast(msg, isAttack = false) {
     const container = document.getElementById('alert-toast-container');
     const toast = document.createElement('div');
     toast.className = 'toast';
@@ -195,6 +262,12 @@ function showToast(msg) {
     toast.textContent = msg;
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 8000);
+    
+    // Play alarm beep and speak the alert
+    playAlarmBeep();
+    // Slight delay so beep plays first, then voice
+    const cleanMsg = msg.replace(/[🚨⚠️]/g, '').trim();
+    setTimeout(() => speakAlert(cleanMsg), 600);
 }
 
 // Sidebar Navigation
