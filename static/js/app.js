@@ -88,20 +88,19 @@ function showLogin() {
 }
 
 let isAutoAttackScheduled = false;
+let attackActive = false; // Track if an attack is currently active
 
 function showDashboard() {
     loginView.classList.remove('active');
     dashboardView.classList.add('active');
     document.getElementById('user-role').textContent = `Role: ${state.role}`;
     
-    loadDashboardData();
     initWebSocket();
     
     if (!isAutoAttackScheduled) {
-        scheduleNextAttack();
+        scheduleNextAttack(true); // true = first attack (shorter delay)
         isAutoAttackScheduled = true;
     }
-    setInterval(loadDashboardData, 30000); // refresh every 30s
 }
 
 // Dashboard Data Loading
@@ -114,19 +113,28 @@ async function authFetch(url) {
 }
 
 async function loadDashboardData() {
-    // Reset all statuses to Secure on load
-    ['Alpha', 'Beta', 'Gamma'].forEach(company => {
-        const el = document.getElementById(`status-${company}`);
-        if(el) {
-            el.textContent = 'Secure';
-            el.className = 'value status-badge status-Secure';
-        }
-    });
+    // Only reset if no attack is currently active
+    if (!attackActive) {
+        ['Alpha', 'Beta', 'Gamma'].forEach(company => {
+            const el = document.getElementById(`status-${company}`);
+            if(el) {
+                el.textContent = 'Secure';
+                el.className = 'value status-badge status-Secure';
+            }
+        });
+    }
 }
 
-// Auto-Simulate Attack every 2 to 3 minutes (runs entirely on frontend)
-function scheduleNextAttack() {
-    const delay = Math.floor(Math.random() * (180000 - 120000 + 1)) + 120000;
+// Auto-Simulate Attack (first attack in 15-30s, then every 2-3 minutes)
+function scheduleNextAttack(isFirst = false) {
+    let delay;
+    if (isFirst) {
+        // First attack comes quickly (15 to 30 seconds after login)
+        delay = Math.floor(Math.random() * (30000 - 15000 + 1)) + 15000;
+    } else {
+        // Subsequent attacks every 2 to 3 minutes
+        delay = Math.floor(Math.random() * (180000 - 120000 + 1)) + 120000;
+    }
     
     setTimeout(() => {
         if (state.token) {
@@ -135,6 +143,8 @@ function scheduleNextAttack() {
             
             const attackedCompany = companies[Math.floor(Math.random() * companies.length)];
             const threat = threats[Math.floor(Math.random() * threats.length)];
+            
+            attackActive = true;
             
             // Reset all to secure first
             companies.forEach(company => {
@@ -152,19 +162,20 @@ function scheduleNextAttack() {
                 el.className = 'value status-badge status-Critical';
             }
             
-            // Show alert toast
+            // Show alert toast with audio
             showToast(`🚨 CRITICAL: Company ${attackedCompany} is under attack! (${threat})`);
             
-            // Reset back to Secure after 30 seconds
+            // Reset back to Secure after 45 seconds
             setTimeout(() => {
+                attackActive = false;
                 const resetEl = document.getElementById(`status-${attackedCompany}`);
                 if(resetEl && resetEl.textContent === 'Under Attack') {
                     resetEl.textContent = 'Secure';
                     resetEl.className = 'value status-badge status-Secure';
                 }
-            }, 30000);
+            }, 45000);
         }
-        scheduleNextAttack();
+        scheduleNextAttack(false);
     }, delay);
 }
 
