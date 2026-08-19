@@ -261,7 +261,7 @@ async function loadThreats() {
         threats.forEach(t => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${new Date(t.timestamp).toLocaleString()}</td>
+                <td>${new Date(t.timestamp + 'Z').toLocaleString()}</td>
                 <td><strong>${t.threat_type}</strong></td>
                 <td>${t.source_ip}</td>
                 <td class="severity-${t.severity}">${t.severity}</td>
@@ -287,7 +287,7 @@ async function loadLogs() {
         logs.forEach(l => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${new Date(l.timestamp).toLocaleString()}</td>
+                <td>${new Date(l.timestamp + 'Z').toLocaleString()}</td>
                 <td>${l.source_ip}</td>
                 <td>${l.location || 'Unknown'}</td>
                 <td>${l.event_type}</td>
