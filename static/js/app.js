@@ -124,42 +124,20 @@ async function loadDashboardData() {
     });
 }
 
-
-// Auto-Simulate Attack every 2 to 3 minutes
+// Auto-Simulate Attack every 2 to 3 minutes (runs entirely on frontend)
 function scheduleNextAttack() {
-    // Random delay between 2 mins (120,000 ms) and 3 mins (180,000 ms)
     const delay = Math.floor(Math.random() * (180000 - 120000 + 1)) + 120000;
     
-    setTimeout(async () => {
+    setTimeout(() => {
         if (state.token) {
-            try {
-                await fetch('/api/simulate-attack', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${state.token}` }
-                });
-            } catch(err) {
-                console.error(err);
-            }
-        }
-        scheduleNextAttack(); // Schedule the next one
-    }, delay);
-}
-
-// WebSocket connection
-function initWebSocket() {
-    if(state.socket) return;
-    
-    state.socket = io({
-        extraHeaders: { 'Authorization': `Bearer ${state.token}` }
-    });
-    
-    state.socket.on('new_alert', (alert) => {
-        if (alert.company) {
-            // Simulated Attack on a Company
-            showToast(`🚨 CRITICAL: ${alert.company} is under attack! (${alert.threat_type})`);
+            const companies = ['Alpha', 'Beta', 'Gamma'];
+            const threats = ['Massive DDoS Attack', 'Ransomware Encryption', 'Zero-Day Exploit', 'Database Exfiltration', 'Advanced Persistent Threat'];
             
-            // Reset all to secure first, then highlight the attacked one
-            ['Alpha', 'Beta', 'Gamma'].forEach(company => {
+            const attackedCompany = companies[Math.floor(Math.random() * companies.length)];
+            const threat = threats[Math.floor(Math.random() * threats.length)];
+            
+            // Reset all to secure first
+            companies.forEach(company => {
                 const el = document.getElementById(`status-${company}`);
                 if(el) {
                     el.textContent = 'Secure';
@@ -167,28 +145,53 @@ function initWebSocket() {
                 }
             });
             
-            // Highlight the attacked company
-            const el = document.getElementById(`status-${alert.company}`);
+            // Flash the attacked company red
+            const el = document.getElementById(`status-${attackedCompany}`);
             if(el) {
                 el.textContent = 'Under Attack';
                 el.className = 'value status-badge status-Critical';
             }
-        } else {
-            // Generic background detection alert
-            showToast(`⚠️ DETECTED: ${alert.threat_type} from ${alert.source_ip}`);
+            
+            // Show alert toast
+            showToast(`🚨 CRITICAL: Company ${attackedCompany} is under attack! (${threat})`);
+            
+            // Reset back to Secure after 30 seconds
+            setTimeout(() => {
+                const resetEl = document.getElementById(`status-${attackedCompany}`);
+                if(resetEl && resetEl.textContent === 'Under Attack') {
+                    resetEl.textContent = 'Secure';
+                    resetEl.className = 'value status-badge status-Secure';
+                }
+            }, 30000);
         }
-    });
+        scheduleNextAttack();
+    }, delay);
+}
+
+// WebSocket connection (for background detection alerts)
+function initWebSocket() {
+    if(state.socket) return;
+    
+    try {
+        state.socket = io({
+            extraHeaders: { 'Authorization': `Bearer ${state.token}` }
+        });
+        
+        state.socket.on('new_alert', (alert) => {
+            if (alert.source_ip) {
+                showToast(`⚠️ DETECTED: ${alert.threat_type} from ${alert.source_ip}`);
+            }
+        });
+    } catch(err) {
+        console.log('WebSocket not available, using frontend-only mode.');
+    }
 }
 
 function showToast(msg) {
     const container = document.getElementById('alert-toast-container');
     const toast = document.createElement('div');
     toast.className = 'toast';
-    toast.style.backgroundColor = '#ef4444';
-    toast.style.color = 'white';
-    toast.style.padding = '20px';
-    toast.style.fontSize = '1.2rem';
-    toast.style.fontWeight = 'bold';
+    toast.style.cssText = 'background: linear-gradient(135deg, #ef4444, #b91c1c); color: white; padding: 20px; font-size: 1.1rem; font-weight: bold; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 5px 20px rgba(239,68,68,0.5); animation: slideIn 0.3s ease;';
     toast.textContent = msg;
     container.appendChild(toast);
     setTimeout(() => toast.remove(), 8000);
