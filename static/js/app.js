@@ -293,7 +293,6 @@ sidebarLinks.forEach(link => {
         e.target.classList.add('active');
         const viewId = e.target.getAttribute('data-view');
         document.getElementById(viewId).classList.add('active');
-        document.getElementById('page-title').textContent = e.target.textContent;
     });
 });
 
@@ -316,7 +315,7 @@ notifBtn.addEventListener('click', async (e) => {
                 alerts.forEach(alert => {
                     const item = document.createElement('div');
                     item.className = 'notif-item';
-                    item.innerHTML = `<strong>[${alert.severity}] ${alert.threat_type}</strong>Source IP: ${alert.source_ip}<br><small>${new Date(alert.timestamp).toLocaleString()}</small>`;
+                    item.innerHTML = `<strong>[${alert.severity}] ${alert.threat_type}</strong><br>Source IP: ${alert.source_ip}<br><small>${new Date(alert.timestamp + 'Z').toLocaleString()}</small>`;
                     notifList.appendChild(item);
                 });
             }
